@@ -1,57 +1,44 @@
 import { Injectable } from '@nestjs/common'
-import { Task, TaskStatus } from './task.entity'
+import { Task } from './task.entity'
 import { CreateTaskDto, UpdateTaskDto } from './task.dto'
+import { InjectRepository } from '@nestjs/typeorm'
+import { DeleteResult, Repository, UpdateResult } from 'typeorm'
 
 @Injectable()
 export class TaskService {
-  private tasks: Task[] = [
-    {
-      id: '1234',
-      title: 'First task',
-      description: 'Go to yoga at 7pm',
-      status: TaskStatus.PENDING,
-    },
-  ]
+  constructor(
+    @InjectRepository(Task) private readonly taskRepository: Repository<Task>,
+  ) {}
 
   getAllTasks() {
-    return this.tasks
+    return this.taskRepository.find()
   }
 
   getTaskById(id: string) {
-    return this.tasks.find((task) => task.id === id)
+    return this.taskRepository.findOne({
+      where: {
+        id,
+      },
+    })
   }
 
   createTask({ title, description }: CreateTaskDto) {
-    // const newTask = {
-    //   id: v4(),
-    //   title,
-    //   description,
-    //   status: TaskStatus.PENDING,
-    // }
     const newTask = new Task(title, description)
-    this.tasks.push(newTask)
-
-    return newTask
+    this.taskRepository.create(newTask)
+    return this.taskRepository.save(newTask)
   }
 
-  updateTask(id: string, updatedFields: UpdateTaskDto) {
-    const task = this.tasks.find((task) => task.id === id)
-    if (task) {
-      Object.assign(task, updatedFields)
-      return task
-    }
-    return 'Error: task not found'
+  async updateTask(id: string, updatedFields: UpdateTaskDto) {
+    const updateResult = await this.taskRepository.update({ id }, updatedFields)
+    return this.validateDBchange(updateResult)
   }
 
-  deleteTask(id: string) {
-    const lastLength = this.tasks.length
-    console.log(id)
-    this.tasks = this.tasks.filter((task) => task.id !== id)
-    const newLength = this.tasks.length
+  async deleteTask(id: string) {
+    const deleteResult = await this.taskRepository.delete({ id })
+    return this.validateDBchange(deleteResult)
+  }
 
-    if (newLength < lastLength) {
-      return true
-    }
-    return false
+  private validateDBchange(result: DeleteResult | UpdateResult) {
+    return result.affected === 1 ? true : false
   }
 }

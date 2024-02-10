@@ -9,6 +9,7 @@ import {
   Param,
   Post,
   Patch,
+  Query,
 } from '@nestjs/common'
 
 @Controller('task')
@@ -16,12 +17,12 @@ export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Get()
-  getAllTasks(): Promise<Task[]> {
-    return this.taskService.getAllTasks()
+  getTasksFromPage(@Query('page') page?: number): Promise<Task[]> {
+    return this.taskService.getTasks(page)
   }
 
   @Get(':taskId')
-  getTaskById(@Param('taskId') taskId: string): Promise<Task> {
+  getTaskById(@Param('taskId') taskId: string) {
     return this.taskService.getTaskById(taskId)
   }
 
@@ -34,12 +35,12 @@ export class TaskController {
   updateTask(
     @Param('taskId') taskId: string,
     @Body() updatedTask: UpdateTaskDto,
-  ): Promise<boolean> {
+  ) {
     return this.taskService.updateTask(taskId, updatedTask)
   }
 
   @Delete(':taskId')
-  deleteTask(@Param('taskId') taskId: string): Promise<boolean> {
+  deleteTask(@Param('taskId') taskId: string) {
     return this.taskService.deleteTask(taskId)
   }
 }

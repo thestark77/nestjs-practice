@@ -1,5 +1,10 @@
-import { TaskStatus } from './task.entity'
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+
+enum TaskStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  DONE = 'DONE',
+}
 
 export class CreateTaskDto {
   @IsString()
@@ -8,13 +13,12 @@ export class CreateTaskDto {
 
   @IsString()
   @IsNotEmpty()
-  description: string
+  description?: string
 }
 
 export class UpdateTaskDto {
   @IsString()
   @IsNotEmpty()
-  @IsOptional()
   title?: string
 
   @IsString()

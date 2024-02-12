@@ -1,12 +1,13 @@
 import type { RecordsAndPages } from '../utils/interfaces'
-import { HttpException, Injectable } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Task } from '@prisma/client'
 import { CreateTaskDto, UpdateTaskDto } from './task.dto'
-import { errorHandler } from '../utils/errorHandler'
+import { handleError } from '../utils/errorHandler'
 import { PrismaService } from 'src/prisma/prisma.service'
 @Injectable()
 export class TaskService {
   constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(TaskService.name)
 
   private RESULTS_LIMIT = 20
 
@@ -18,7 +19,14 @@ export class TaskService {
     try {
       return await this.prisma.task.count()
     } catch (error) {
-      return errorHandler('Query failed', 500, error)
+      return handleError(
+        this.logger,
+        this.totalRecords.name,
+        undefined,
+        'Query failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        error,
+      )
     }
   }
 
@@ -32,17 +40,20 @@ export class TaskService {
   }
 
   async getTasks(page?: number): Promise<Task[] | HttpException> {
-    if (page < 1) {
-      page = 1
-    }
-
     try {
       return await this.prisma.task.findMany({
         skip: this.getOffsetFromPage(page),
         take: this.RESULTS_LIMIT,
       })
     } catch (error) {
-      return errorHandler('Query failed', 500, error)
+      return handleError(
+        this.logger,
+        this.getTasks.name,
+        { page },
+        'Query failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        error,
+      )
     }
   }
 
@@ -52,7 +63,14 @@ export class TaskService {
         where: { id },
       })
     } catch (error) {
-      return errorHandler('Task not found', 404, error)
+      return handleError(
+        this.logger,
+        this.getTaskById.name,
+        { id },
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+        error,
+      )
     }
   }
 
@@ -68,7 +86,17 @@ export class TaskService {
         },
       })
     } catch (error) {
-      return errorHandler('Task not found', 404, error)
+      return handleError(
+        this.logger,
+        this.createTask.name,
+        {
+          title,
+          description,
+        },
+        'Query failed',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        error,
+      )
     }
   }
 
@@ -79,7 +107,14 @@ export class TaskService {
         data,
       })
     } catch (error) {
-      return errorHandler('Task not found', 404, error)
+      return handleError(
+        this.logger,
+        this.updateTask.name,
+        { id, data },
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+        error,
+      )
     }
   }
 
@@ -87,7 +122,14 @@ export class TaskService {
     try {
       return await this.prisma.task.delete({ where: { id } })
     } catch (error) {
-      return errorHandler('Task not found', 404, error)
+      return handleError(
+        this.logger,
+        this.deleteTask.name,
+        { id },
+        'Task not found',
+        HttpStatus.NOT_FOUND,
+        error,
+      )
     }
   }
 }

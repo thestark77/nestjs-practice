@@ -16,14 +16,23 @@ import {
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
+  @Get('records')
+  async getTotalPagesAndRecords() {
+    return await this.taskService.totalRecords()
+  }
+
   @Get()
-  getTasksFromPage(@Query('page') page?: number) {
+  getTasksFromPage(@Query('page', ParseIntPipe) page?: number) {
+    if (page < 1) {
+      page = 1
+    }
+
     return this.taskService.getTasks(page)
   }
 
   @Get(':taskId')
-  getTaskById(@Param('taskId', ParseIntPipe) taskId: number) {
-    return this.taskService.getTaskById(taskId)
+  getTaskById(@Param('taskId', ParseIntPipe) id: number) {
+    return this.taskService.getTaskById(id)
   }
 
   @Post()
